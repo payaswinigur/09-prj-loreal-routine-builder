@@ -19,32 +19,53 @@ productsContainer.innerHTML = `
 /* Load product data from JSON file */
 async function loadProducts() {
   const response = await fetch("products.json");
-  const data = await response.json();
+  let data;
+try {
+  data = await response.json();
+} catch {
+  return new Response(JSON.stringify({ error: "OpenAI response not valid JSON" }), {
+    status: 500,
+    headers: corsHeaders,
+  });
+}
+response.json();
   allProducts = data.products;
   return allProducts;
 }
 
 /* Create HTML for displaying product cards */
 function displayProducts(products) {
+  // ✅ 1. Render cards FIRST
   productsContainer.innerHTML = products
     .map(
       (product, index) => `
-    <div class="product-card" data-index="${index}">
-      <img src="${product.image}" alt="${product.name}">
-      <div class="product-info">
-        <h3>${product.name}</h3>
-        <p>${product.brand}</p>
-      </div>
-    </div>
-  `
+        <div class="product-card" data-index="${index}">
+          <img src="${product.image}" alt="${product.name}">
+          <div class="product-info">
+            <h3>${product.name}</h3>
+            <p>${product.brand}</p>
+          </div>
+        </div>
+      `
     )
     .join("");
 
-  // Add click listeners for selecting products
-  document.querySelectorAll(".product-card").forEach((card, i) => {
-    card.addEventListener("click", () => toggleProductSelection(products[i], card));
+  // ✅ 2. Now select the created cards
+  const cards = document.querySelectorAll(".product-card");
+
+  cards.forEach((card, i) => {
+    const product = products[i];
+
+    // ✅ Restore highlight if it was already selected
+    if (selectedProducts.some((p) => p.name === product.name)) {
+      card.classList.add("selected");
+    }
+
+    // ✅ Add click event to toggle selection
+    card.addEventListener("click", () => toggleProductSelection(product, card));
   });
 }
+
 
 /* Handle selecting/unselecting products */
 function toggleProductSelection(product, card) {
@@ -94,34 +115,68 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Generate Routine Button */
 generateBtn.addEventListener("click", async () => {
   if (selectedProducts.length === 0) {
-    chatWindow.innerHTML =
-      "Please select some products before generating your routine!";
+    chatWindow.innerHTML = "Please select some products before generating your routine!";
     return;
   }
 
   chatWindow.innerHTML = "✨ Generating your personalized routine...";
 
-  // Example placeholder for OpenAI integration
-  // Replace with API call later if needed
-  const routineText = `
-    Here's your L'Oréal-inspired routine:
-    1️⃣ Cleanser: ${selectedProducts[0]?.name || "Pick a cleanser"}
-    2️⃣ Treatment: ${selectedProducts[1]?.name || "Add a serum/moisturizer"}
-    3️⃣ Finishing: ${selectedProducts[2]?.name || "Add a sunscreen or fragrance"}
-    🌟 Stay consistent for radiant results!
-  `;
+  try {
+    const response = await fetch("https://routineadvisorloreal.gurung-38.workers.dev/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        selectedProducts: selectedProducts
+      })
+    });
 
-  chatWindow.innerHTML = `<pre>${routineText}</pre>`;
+    const data = await response.json();
+
+    const aiMessage = data.choices?.[0]?.message?.content || "Error generating routine.";
+
+    chatWindow.innerHTML = `<pre>${aiMessage}</pre>`;
+  } catch (error) {
+    console.error(error);
+    chatWindow.innerHTML = "❌ Something went wrong connecting to the server.";
+  }
 });
+
 
 /* Chat form submission handler - placeholder */
-chatForm.addEventListener("submit", (e) => {
+/* Chat form submission handler - real OpenAI call */
+chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const userInput = document.getElementById("userInput").value;
+  const userInput = document.getElementById("userInput").value.trim();
+  if (!userInput) return;
+
+  // Show user's message
   chatWindow.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
-  chatWindow.innerHTML += `<p><strong>Bot:</strong> Connect to the OpenAI API for a response!</p>`;
   chatForm.reset();
+
+  // Show loading indicator
+  chatWindow.innerHTML += `<p><strong>Bot:</strong> ✨ Thinking...</p>`;
+
+  try {
+    const response = await fetch("https://routineadvisorloreal.gurung-38.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        selectedProducts: selectedProducts.length > 0 ? selectedProducts : [],
+        userMessage: userInput
+      }),
+    });
+
+    const data = await response.json();
+    const aiMessage = data.choices?.[0]?.message?.content || "Sorry, I couldn’t generate a response.";
+
+    chatWindow.innerHTML += `<p><strong>Bot:</strong> ${aiMessage}</p>`;
+  } catch (error) {
+    console.error(error);
+    chatWindow.innerHTML += `<p><strong>Bot:</strong> ❌ Something went wrong connecting to the server.</p>`;
+  }
 });
+

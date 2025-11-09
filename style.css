@@ -232,6 +232,21 @@ body {
   gap: 10px;
 }
 
+.product-card {
+  border: 2px solid transparent;
+  border-radius: 12px;
+  transition: 0.2s ease;
+}
+
+.product-card.selected {
+  border-color: #e3a535; /* Gold
+  highlight */
+  background: #000; /* Light pink glow */
+  color: #fafafa;
+  transform: scale(1.03);
+}
+
+
 .generate-btn {
   width: 100%;
   margin-top: 20px;
