@@ -55,6 +55,14 @@ body {
   font-weight: 500;
 }
 
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+
 .search-section select:focus {
   outline: none;
   border-color: #666;
