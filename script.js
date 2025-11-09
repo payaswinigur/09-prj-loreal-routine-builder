@@ -13,8 +13,7 @@ let selectedProducts = [];
 productsContainer.innerHTML = `
   <div class="placeholder-message">
     Select a category to view products
-  </div>
-`;
+  </div>`;
 
 /* Load product data from JSON file */
 async function loadProducts() {
@@ -64,12 +63,11 @@ function displayProducts(products) {
     if (selectedProducts.some((p) => p.name === product.name)) {
       card.classList.add("selected");
     }
-
+    
     // ✅ Add click event to toggle selection
     card.addEventListener("click", () => toggleProductSelection(product, card));
   });
 }
-
 
 /* Handle selecting/unselecting products */
 function toggleProductSelection(product, card) {
@@ -115,6 +113,28 @@ categoryFilter.addEventListener("change", async (e) => {
   const filteredProducts = products.filter(
     (product) => product.category === selectedCategory
   );
+
+  displayProducts(filteredProducts);
+});
+
+const searchInput = document.getElementById("searchInput");
+
+// Handle search filtering
+searchInput.addEventListener("input", async (e) => {
+  const query = e.target.value.toLowerCase();
+  const selectedCategory = categoryFilter.value;
+  const products = await loadProducts();
+
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory = selectedCategory
+      ? product.category === selectedCategory
+      : true;
+    const matchesSearch =
+      product.name.toLowerCase().includes(query) ||
+      product.brand.toLowerCase().includes(query) ||
+      (product.description && product.description.toLowerCase().includes(query));
+    return matchesCategory && matchesSearch;
+  });
 
   displayProducts(filteredProducts);
 });
