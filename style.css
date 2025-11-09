@@ -197,6 +197,49 @@ body {
   flex-shrink: 0;
 }
 
+/* —— Product description tooltip —— */
+.product-image {
+  position: relative;
+  display: inline-block;
+}
+
+.product-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  width: 280px;
+  background-color: #000;
+  color: #fff;
+  text-align: left;
+  border-radius: 8px;
+  padding: 10px 14px;
+  position: absolute;
+  z-index: 10;
+  bottom: 120%; /* position above the image */
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  line-height: 1.4;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.product-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: #000 transparent transparent transparent;
+}
+
+/* Show on hover */
+.product-image:hover .product-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
 .product-card .product-info {
   flex: 1;
   display: flex;

@@ -35,12 +35,16 @@ response.json();
 
 /* Create HTML for displaying product cards */
 function displayProducts(products) {
-  // ✅ 1. Render cards FIRST
   productsContainer.innerHTML = products
     .map(
       (product, index) => `
         <div class="product-card" data-index="${index}">
-          <img src="${product.image}" alt="${product.name}">
+          <div class="product-image">
+            <img src="${product.image}" alt="${product.name}">
+            <div class="product-tooltip">
+              ${product.description}
+            </div>
+          </div>
           <div class="product-info">
             <h3>${product.name}</h3>
             <p>${product.brand}</p>
