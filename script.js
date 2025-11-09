@@ -5,34 +5,52 @@ const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const selectedProductsList = document.getElementById("selectedProductsList");
 const generateBtn = document.getElementById("generateRoutine");
+const searchInput = document.getElementById("searchInput");
+const clearBtn = document.getElementById("clearSelected");
 
 let allProducts = [];
 let selectedProducts = [];
+let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [
+  { role: "system", content: "You are a helpful L'Oréal skincare advisor." }
+];
 
-/* Show initial placeholder until user selects a category */
+/* ✅ Load selected products from localStorage if they exist */
+const savedProducts = JSON.parse(localStorage.getItem("selectedProducts"));
+if (savedProducts && Array.isArray(savedProducts)) {
+  selectedProducts = savedProducts;
+  updateSelectedList();
+}
+
+/* ✅ Load saved chat history */
+if (chatHistory.length > 1) {
+  chatWindow.innerHTML = chatHistory
+    .filter(m => m.role !== "system")
+    .map(m => `<p><strong>${m.role === "user" ? "You" : "Bot"}:</strong> ${m.content}</p>`)
+    .join("");
+}
+
+/* ✅ Clear selected products button */
+clearBtn.addEventListener("click", () => {
+  selectedProducts = [];
+  localStorage.removeItem("selectedProducts");
+  updateSelectedList();
+});
+
+/* Initial placeholder */
 productsContainer.innerHTML = `
   <div class="placeholder-message">
-    Select a category to view products
+    Select a category or use the search to view products
   </div>`;
 
 /* Load product data from JSON file */
 async function loadProducts() {
   const response = await fetch("products.json");
-  let data;
-try {
-  data = await response.json();
-} catch {
-  return new Response(JSON.stringify({ error: "OpenAI response not valid JSON" }), {
-    status: 500,
-    headers: corsHeaders,
-  });
-}
-response.json();
+  const data = await response.json();
   allProducts = data.products;
   return allProducts;
 }
 
-/* Create HTML for displaying product cards */
+/* Display product cards */
 function displayProducts(products) {
   productsContainer.innerHTML = products
     .map(
@@ -53,18 +71,15 @@ function displayProducts(products) {
     )
     .join("");
 
-  // ✅ 2. Now select the created cards
   const cards = document.querySelectorAll(".product-card");
 
   cards.forEach((card, i) => {
     const product = products[i];
 
-    // ✅ Restore highlight if it was already selected
     if (selectedProducts.some((p) => p.name === product.name)) {
       card.classList.add("selected");
     }
-    
-    // ✅ Add click event to toggle selection
+
     card.addEventListener("click", () => toggleProductSelection(product, card));
   });
 }
@@ -74,19 +89,18 @@ function toggleProductSelection(product, card) {
   const isSelected = selectedProducts.find((p) => p.name === product.name);
 
   if (isSelected) {
-    // Remove from selected list
     selectedProducts = selectedProducts.filter((p) => p.name !== product.name);
     card.classList.remove("selected");
   } else {
-    // Add to selected list
     selectedProducts.push(product);
     card.classList.add("selected");
   }
 
   updateSelectedList();
+  localStorage.setItem("selectedProducts", JSON.stringify(selectedProducts));
 }
 
-/* Update the visual selected products list */
+/* Update visual selected products list */
 function updateSelectedList() {
   if (selectedProducts.length === 0) {
     selectedProductsList.innerHTML = `<p style="color:#666;">No products selected yet.</p>`;
@@ -105,7 +119,7 @@ function updateSelectedList() {
     .join("");
 }
 
-/* Filter and display products when category changes */
+/* Filter by category */
 categoryFilter.addEventListener("change", async (e) => {
   const selectedCategory = e.target.value;
   const products = await loadProducts();
@@ -117,9 +131,7 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-const searchInput = document.getElementById("searchInput");
-
-// Handle search filtering
+/* ✅ Product search box */
 searchInput.addEventListener("input", async (e) => {
   const query = e.target.value.toLowerCase();
   const selectedCategory = categoryFilter.value;
@@ -139,63 +151,36 @@ searchInput.addEventListener("input", async (e) => {
   displayProducts(filteredProducts);
 });
 
+/* ✅ Generate Routine Button */
 generateBtn.addEventListener("click", async () => {
   if (selectedProducts.length === 0) {
-    chatWindow.innerHTML = "Please select some products before generating your routine!";
+    chatWindow.innerHTML += "<p>Please select some products before generating your routine!</p>";
     return;
   }
 
-  chatWindow.innerHTML = "✨ Generating your personalized routine...";
+  chatWindow.innerHTML += "<p><strong>Bot:</strong> ✨ Generating your personalized routine...</p>";
 
-  try {
-    const response = await fetch("https://routineadvisorloreal.gurung-38.workers.dev/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        selectedProducts: selectedProducts
-      })
-    });
-
-    const data = await response.json();
-
-    const aiMessage = data.choices?.[0]?.message?.content || "Error generating routine.";
-
-    chatWindow.innerHTML = `<pre>${aiMessage}</pre>`;
-  } catch (error) {
-    console.error(error);
-    chatWindow.innerHTML = "❌ Something went wrong connecting to the server.";
-  }
-});
-
-
-/* Chat form submission handler - placeholder */
-/* Chat form submission handler - real OpenAI call */
-chatForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const userInput = document.getElementById("userInput").value.trim();
-  if (!userInput) return;
-
-  // Show user's message
-  chatWindow.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
-  chatForm.reset();
-
-  // Show loading indicator
-  chatWindow.innerHTML += `<p><strong>Bot:</strong> ✨ Thinking...</p>`;
+  // Add user request to history
+  chatHistory.push({
+    role: "user",
+    content: `Create a skincare routine using: ${selectedProducts.map(p => p.name).join(", ")}`
+  });
 
   try {
     const response = await fetch("https://routineadvisorloreal.gurung-38.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        selectedProducts: selectedProducts.length > 0 ? selectedProducts : [],
-        userMessage: userInput
-      }),
+        messages: chatHistory,
+        selectedProducts
+      })
     });
 
     const data = await response.json();
-    const aiMessage = data.choices?.[0]?.message?.content || "Sorry, I couldn’t generate a response.";
+    const aiMessage = data.choices?.[0]?.message?.content || "Error generating routine.";
+
+    chatHistory.push({ role: "assistant", content: aiMessage });
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
 
     chatWindow.innerHTML += `<p><strong>Bot:</strong> ${aiMessage}</p>`;
   } catch (error) {
@@ -204,3 +189,52 @@ chatForm.addEventListener("submit", async (e) => {
   }
 });
 
+/* ✅ Chat submission (Follow-up questions) */
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const userInput = document.getElementById("userInput").value.trim();
+  if (!userInput) return;
+
+  chatWindow.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+  chatForm.reset();
+
+  chatWindow.innerHTML += `<p><strong>Bot:</strong> ✨ Thinking...</p>`;
+
+  // Add user message to history
+  chatHistory.push({ role: "user", content: userInput });
+
+  try {
+    const response = await fetch("https://routineadvisorloreal.gurung-38.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: chatHistory,
+        selectedProducts
+      }),
+    });
+
+    const data = await response.json();
+    const aiMessage = data.choices?.[0]?.message?.content || "Sorry, I couldn’t generate a response.";
+
+    chatHistory.push({ role: "assistant", content: aiMessage });
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+
+    chatWindow.innerHTML += `<p><strong>Bot:</strong> ${aiMessage}</p>`;
+  } catch (error) {
+    console.error(error);
+    chatWindow.innerHTML += `<p><strong>Bot:</strong> ❌ Something went wrong connecting to the server.</p>`;
+  }
+});
+
+// ✅ Clear chat history button
+const clearChatBtn = document.getElementById("clearChat");
+
+clearChatBtn.addEventListener("click", () => {
+  if (confirm("Are you sure you want to clear the chat?")) {
+    chatWindow.innerHTML = "";
+    chatHistory = [
+      { role: "system", content: "You are a helpful L'Oréal skincare advisor." }
+    ];
+    localStorage.removeItem("chatHistory");
+  }
+});

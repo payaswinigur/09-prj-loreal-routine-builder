@@ -305,6 +305,20 @@ body {
   flex-wrap: wrap;
   gap: 10px;
 }
+.clear-btn {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.clear-btn:hover {
+  background-color: #ff4d4d;
+}
+
 
 .product-card {
   border: 2px solid transparent;
@@ -342,3 +356,131 @@ body {
 .generate-btn i {
   margin-right: 8px;
 }
+
+/* --- Chat Window Styling --- */
+.chatbox {
+  max-width: 700px;
+  margin: 40px auto;
+  background: #f8f8f8;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chatbox h2 {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Chat message container */
+.chat-window {
+  height: 400px;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #ddd;
+}
+
+/* User and Bot message bubbles */
+.chat-window p {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  margin: 8px 0;
+  line-height: 1.4;
+  font-size: 0.95rem;
+  word-wrap: break-word;
+}
+
+/* User (right-aligned, gold tone) */
+.chat-window p strong:contains("You") ~ * {
+  background: #fef3c7;
+  align-self: flex-end;
+}
+
+/* Simpler way to handle user/bot via class assignment (optional improvement below) */
+
+/* Bot (left-aligned, gray tone) */
+.chat-window p.bot {
+  background: #f2f2f2;
+  color: #333;
+  border-top-left-radius: 4px;
+}
+
+/* User bubble */
+.chat-window p.user {
+  background: #fde68a;
+  color: #111;
+  margin-left: auto;
+  border-top-right-radius: 4px;
+  text-align: right;
+}
+
+/* Scrollbar styling */
+.chat-window::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-window::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 8px;
+}
+
+/* Chat input form */
+.chat-form {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  transition: 0.2s;
+}
+
+.chat-form input:focus {
+  border-color: #000;
+  outline: none;
+}
+
+.chat-form button {
+  background: #000;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat-form button:hover {
+  background: #e3a535;
+}
+
+.clear-btn {
+  display: block;
+  margin: 10px auto 0;
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.clear-btn:hover {
+
+  background: #e3a535;
+}
+
