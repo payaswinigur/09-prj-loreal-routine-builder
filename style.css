@@ -23,6 +23,8 @@ body {
   text-align: center;
   padding-top: 50px;
   padding-bottom: 10px;
+  box-shadow: #000;
+  box-shadow: 2px;
 }
 
 .logo {
